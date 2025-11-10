@@ -2,35 +2,62 @@ pipeline {
     agent any
     environment {
         VIRTUAL_ENV = 'venv'
+        PYTHON = 'C:\\Users\\PC\\AppData\\Local\\Programs\\Python\\Python313\\python.exe'
     }
     stages {
         stage('Setup') {
             steps {
                 script {
+                    // Create virtual environment if it doesn't exist
                     if (!fileExists("${env.WORKSPACE}\\${VIRTUAL_ENV}")) {
-                        bat "python -m venv ${VIRTUAL_ENV}"
+                        bat "\"${env.PYTHON}\" -m venv ${VIRTUAL_ENV}"
                     }
-                    bat "${VIRTUAL_ENV}\\Scripts\\activate && pip install -r requirements.txt"
+                    // Install dependencies
+                    bat "\"${env.VIRTUAL_ENV}\\Scripts\\python.exe\" -m pip install --upgrade pip"
+                    bat "\"${env.VIRTUAL_ENV}\\Scripts\\python.exe\" -m pip install -r requirements.txt"
                 }
             }
         }
         stage('Lint') {
             steps {
                 script {
-                    bat "${VIRTUAL_ENV}\\Scripts\\activate && flake8 app.py"
+                    bat "\"${env.VIRTUAL_ENV}\\Scripts\\python.exe\" -m flake8 app.py"
                 }
             }
         }
         stage('Test') {
             steps {
                 script {
-                    bat "${VIRTUAL_ENV}\\Scripts\\activate && pytest"
+                    bat "\"${env.VIRTUAL_ENV}\\Scripts\\python.exe\" -m pytest"
+                }
+            }
+        }
+        stage('Coverage') {
+            steps {
+                script {
+                    // Install coverage if not already installed
+                    bat "\"${env.VIRTUAL_ENV}\\Scripts\\python.exe\" -m pip install coverage"
+                    // Run coverage on tests
+                    bat "\"${env.VIRTUAL_ENV}\\Scripts\\python.exe\" -m coverage run -m pytest"
+                    // Generate coverage report
+                    bat "\"${env.VIRTUAL_ENV}\\Scripts\\python.exe\" -m coverage report"
+                }
+            }
+        }
+        stage('Security Scan') {
+            steps {
+                script {
+                    // Install bandit if not already installed
+                    bat "\"${env.VIRTUAL_ENV}\\Scripts\\python.exe\" -m pip install bandit"
+                    // Run security scan
+                    bat "\"${env.VIRTUAL_ENV}\\Scripts\\python.exe\" -m bandit -r ."
                 }
             }
         }
         stage('Deploy') {
             steps {
                 echo "Deploying application..."
+                // Add your deployment commands here
             }
         }
     }
@@ -40,4 +67,3 @@ pipeline {
         }
     }
 }
-
